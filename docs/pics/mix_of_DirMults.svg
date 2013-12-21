@@ -13,8 +13,8 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:export-ydpi="400"
    inkscape:export-xdpi="400"
-   inkscape:export-filename="/home/marcus/Dropbox/thesis/MaxEnt/maxent-talk/pics/DirMultRatio.png"
-   sodipodi:docname="DirMult.svg"
+   inkscape:export-filename="/home/marcus/skynet/docs/pics/mix_of_DirMults.png"
+   sodipodi:docname="mix_of_DirMults.svg"
    inkscape:version="0.48.4 r9939"
    version="1.1"
    id="svg2"
@@ -747,7 +747,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -757,7 +757,7 @@
      inkscape:groupmode="layer"
      inkscape:label="Layer 1">
     <path
-       d="m 212.6371,227.14891 a 12.879445,13.384521 0 1 1 -25.75889,0 12.879445,13.384521 0 1 1 25.75889,0 z"
+       d="m 212.6371,227.14891 c 0,7.39207 -5.76632,13.38452 -12.87944,13.38452 -7.11312,0 -12.87945,-5.99245 -12.87945,-13.38452 0,-7.39207 5.76633,-13.38452 12.87945,-13.38452 7.11312,0 12.87944,5.99245 12.87944,13.38452 z"
        sodipodi:ry="13.384521"
        sodipodi:rx="12.879445"
        sodipodi:cy="227.14891"
@@ -1000,7 +1000,7 @@
            id="path6177" /></g>    </g>
     <path
        transform="matrix(2.2851324,0,0,2.1989011,-451.99988,-122.97601)"
-       d="m 212.6371,227.14891 a 12.879445,13.384521 0 1 1 -25.75889,0 12.879445,13.384521 0 1 1 25.75889,0 z"
+       d="m 212.6371,227.14891 c 0,7.39207 -5.76632,13.38452 -12.87944,13.38452 -7.11312,0 -12.87945,-5.99245 -12.87945,-13.38452 0,-7.39207 5.76633,-13.38452 12.87945,-13.38452 7.11312,0 12.87944,5.99245 12.87944,13.38452 z"
        sodipodi:ry="13.384521"
        sodipodi:rx="12.879445"
        sodipodi:cy="227.14891"
@@ -1009,7 +1009,7 @@
        style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
        sodipodi:type="arc" />
     <path
-       d="m 212.6371,227.14891 a 12.879445,13.384521 0 1 1 -25.75889,0 12.879445,13.384521 0 1 1 25.75889,0 z"
+       d="m 212.6371,227.14891 c 0,7.39207 -5.76632,13.38452 -12.87944,13.38452 -7.11312,0 -12.87945,-5.99245 -12.87945,-13.38452 0,-7.39207 5.76633,-13.38452 12.87945,-13.38452 7.11312,0 12.87944,5.99245 12.87944,13.38452 z"
        sodipodi:ry="13.384521"
        sodipodi:rx="12.879445"
        sodipodi:cy="227.14891"
