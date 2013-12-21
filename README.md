@@ -1,5 +1,7 @@
-Imaging Archetypes
-==================
+skynet
+======
+
+Our idea for an extensible source finder, or:
 
 Automating discovery in astronomical imaging projects,
 because *we have reached the limits of what humans can teach us*.
