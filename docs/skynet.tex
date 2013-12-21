@@ -1,0 +1,194 @@
+\documentclass[11pt]{article}
+\input{myStyle.sty}  
+
+\title{self-aware by 2020, or bust}
+\author{frean, hogg}
+\begin{document}
+\maketitle
+
+%\tableofcontents
+
+\section{old stuff: Bayesian model comparison for locating sources}
+
+An image (and its sub-images) can be modelled as a distribution over
+pixel intensities. Radio astronomy images can be thought of as
+primarily background with an unknown number of spatially extended
+sources; and so these images can be thought of as a mixture of
+``background" and ``source" distributions. Continuous pixel intensity
+values in astronomical images can be discretised by ``binning" them
+over $K$ pixel intensity ranges. These bins needn't necessarily be
+equally spaced over the pixel intensity range, but may be constructed
+using a different strategy, for example bins that are distributed
+across the pixel intensity range so that there is equal occupancy in
+each bin.
+\footnote{[ANNA'S NOTE TO MARCUS from way back: The LDA model is that
+    the ``background" and ``source" distributions are fixed
+    multinomial distributions which are both drawn from the same
+    Dirichlet distribution (with the same $\alpha$ vector); whereas
+    here I think we are saying that each ``topic" distribution is
+    drawn from its own Dirichlet distribution (with its own $\alpha$
+    vector). Therefore we could specify that the ``background" and
+    ``source" distributions are not fixed but can/do vary over the
+    image. For example, we might draw a background distribution and a
+    source distribution for each sub-image in an image, from their
+    respective Dirichlet distributions (and from these then draw the
+    actual pixel values in the sub-image). This is like the Dirichlet
+    compound multinomial extension LDA in Doyle \& Elkan (2009) and
+    Madsen, Kauchak \& Elkan (2005) in their ``modelling word
+    burstiness" papers. [see section 4.2 of my ``done\_to\_date.pdf"
+      from May/June for a short description of DCMLDA + full
+      references for the two burstiness papers]. ALSO: when we move on
+    from assuming a fair coin toss for the mixing proportions of
+    source \& background for an image \ sub-image I guess we would
+    have a Dir dist from which to draw these proportions per
+    sub-image.]}
+
+
+Rather than modelling an image as a mixture of two fixed multinomial
+distributions; we might want to incorporate the variablity of the
+background and source distributions into our model and therefore
+use Dirichlet distributions as our background and source
+distributions. For any particular sub-image fixed background and
+source multinomial distributions can be drawn from their respective
+Dirichlet distributions.
+
+Dir Mult distribution is... what it is.  Has hyperparameters
+$\alpha_{1..K}$. For some vector of counts $\bn$ in $K$ bins of a histogram,
+integrating out the multinomial distributions that result from the
+Dirichlets gives the likelihood:
+\begin{align}
+P(\bn|\alpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_k \frac{\Gamma(\bn_k+\alpha_k)}{\Gamma(\alpha_k)}  
+\label{eq:muldir} 
+\intertext{where}
+A &= \sum_k \alpha_k \\
+N &= \sum_k \bn_k
+\end{align}
+
+The logarithm of this is: 
+\begin{align}
+\log P(\bn|\alpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_k \log \Gamma(\bn_k+\alpha_k) - \log \Gamma(\alpha_k) \label{eq:logmultdir}
+\end{align}
+
+Given that the number of background pixels in such an image far
+outnumber the source pixels, and that the variability among background
+pixels is lower than that for source pixels, we might expect the
+$\alpha^B$ vector for the background distribution $B$ to be large and
+relatively uniform, when compared to the $\alpha^S$ vector for the
+source distribution $S$, which contains much smaller values. 
+
+nb. This is a model which explicitly does {\it not} model sources, in the
+usual sense. Saints Osho and Krishnamurti would approve of the
+backwards-ness of this.
+
+The Frean et
+al maxent paper found the ratio of posterior probabilities under two
+models, one very well specified (the background) and one completely
+unspecified (sources), and did Bayesian model comparison as a Bayes
+factor. Moving and aligning the region so as to maximize the Bayes
+factor in favour of the source model amounts to a source finding
+algorithm. That is,
+\begin{align}
+\text{Score} &= \log \frac{P(\alpha^S | \bn)}{P(\alpha^B | \bn)} \label{eq:score} \\
+&= \log \frac{P(\bn | \alpha^S)}{P(\bn | \alpha^B)} \;\; + \; \log \frac{P(\alpha^S)}{P(\alpha^B)}
+\end{align}
+We can think of this as a mixture with two components then, with the
+hyperparameters of both being specified {\it a priori}.
+
+\section{new thought}
+For a given region in an image, consider a mixture of (say) $K$
+components, where each component is a Dirichlet-multinomial
+distribution parameterised by $\boldsymbol{\alpha}_k$.  
+
+But couldn't we learn them instead, in a form of EM?
+
+ANd couldn't we have more than 2?
+
+Start with 2 and go to 3? and so on?
+
+What are the possibilities? 
+
+That's what I think the project is......
+
+
+\subsection{a total aside, stuck here before I forget: approximating the score leads to a difference of entropies}
+
+It is easy enough to calculate the score that follows from equations
+\ref{eq:score} and \ref{eq:logmultdir} directly, but it's interesting
+/ illuminating to simplify too.
+
+For positive numbers, it turns out that $\log \Gamma(x) \approx x \log
+x - x $.  This approximation is ``pretty good'' (Frean 2012,
+pers. comm.) for $x>3$. 
+% Here's a pic: \\ \includegraphics[width=.7\linewidth]{./pics/approx_to_gamma}
+
+Plugging in this approximation, the log likelihood
+\begin{equation}
+log P(\bn|\alpha) = A \mathcal{H}(\alpha) - (N+A)\mathcal{H}(\bn+\alpha)
+\end{equation}
+
+The entropy  of a categorical distribution is
+\begin{equation}
+\mathcal{H}(p) = - \sum_{k=1}^K p_k \log p_k \geq 0
+\end{equation}
+which is $\leq \log K$, with equality if and only if $\bp$ is uniform.
+
+which simplifies to
+
+\begin{equation}
+\log \frac{P(\bn|S)}{P(\bn|B)} = A^S\mathcal{H}(\alpha^S) - (N+A^S)\mathcal{H}(\bn+\alpha^S) - A^B\mathcal{H}(\alpha^B) + (N+A^B)\mathcal{H}(\bn+\alpha^B) \approx N\mathcal{H}(\alpha^B)
+\label{eq:approxscore}
+\end{equation}
+
+So the score is approximately
+\begin{equation}
+\approx N(\mathcal{H}(\alpha^B) - \mathcal{H}(\bn))
+\end{equation}
+
+(and $\mathcal{H}(\alpha^B)$ is equal to $log K$ if bins have equal occupancy).
+
+So far this is for general $\alpha^S$ and $\alpha^B$, but we assume
+the latter is large compared with the counts in a region of interest,
+and the former is small.
+
+In the particular case of a uniform prior (ie. eq occ bins) the
+entropy of $\alpha^B$ is just $\log K$.
+
+But I'm not sure this matters - the true one is easy to calculate
+(gamma functions) anway.
+
+\subsection{softening the boundaries}
+
+We can think of the hard boundary case as one way of coming up with counts:
+\begin{align}
+n_k &= \sum_i \delta_{b_i=k} \; w_i(\theta) 
+\end{align}
+where $i$ indexes pixels in the image, and $b_i$ is the bin index for
+the \ith pixel, and $\delta$ is the delta function. An all-or-nothing
+$w$ defines a set of pixels over which the sum will ``count''. $w$ is
+parameterised by some numbers $\theta$, for instance
+$\theta=(\bm,\br)$ could be vectors specifying the middle and the
+width of a contiguous region in the image, with $w_i(\theta)=1$ if the
+\ith pixel at position $(x_i,y_i)$ is within a ``box'' $| x_i - m_{x}|
+< r_x$ and $| y_i - m_{y}| < r_y$. This is just a 2-dimensional
+version of the 1D example above then.
+
+Generalising, we instead make $w$ a smooth function of position
+in the image.  This better reflects our belief that sources don't
+suddenly go from absent to present in the space of one pixel. It also
+has the computational niceity that we can calculate gradients
+w.r.t. $\theta$ and use those to perform local search
+a.k.a. optimization of the region: ``source finding''.
+
+A suitable smooth function might be
+\begin{align}
+w_i(\bm,\br) &= \exp \left[- \half (\bx - \bm)^T \bC^{-1}(\bx - \bm) \right]
+\intertext{with }
+\bC &= \begin{bmatrix} r_x & 0 \\ 0 & r_y \end{bmatrix}
+\intertext{for an ``axis aligned'' ellipse, and I guess}
+\bC &= \begin{bmatrix} \cos\phi & -\sin\phi \\ \sin\phi & \cos\phi \end{bmatrix}\begin{bmatrix} r_1 & 0 \\ 0 & r_2 \end{bmatrix} \\
+ &= \begin{bmatrix} r_1 \cos\phi & -r_2 \sin\phi \\ r_1 \sin\phi & r_2 \cos\phi \end{bmatrix}
+\intertext{for a rotated one.}
+\end{align}
+So in this case the parameters will be $(m_1, m_2, r_1, r_2, \phi)$.
+
+\end{document}
