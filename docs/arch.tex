@@ -51,4 +51,45 @@ A more general model would permit patches to be drawn from mixtures of classes;
   the likelihood function would not have a $k$ to the right of the bar,
   it would have a vector $w$ of $K$ weights.
 
+\section{sort-of EM?}
+Anna and I used the $K=2$ model in which $\alpha_0$ has large numbers
+in it and corresponds to the background, and $\alpha_1 =
+(1,1,\ldots,1)$ and models sources. We used the ratio of the
+associated posterior probs (a.k.a. the Bayes factor) for the pixel
+values in a region that we parameterised as a ``score'' for the
+sourciness of that region.
+Optimizing the score in the space of region parameters is source finding.
+
+For the $i^{th}$ source, the source parameters $\theta_i =
+(x,y,w_x,w_y,\phi)$ (ie. position, widths, and rotation) could be
+thought of as parameters specifying the border between source and
+background if you like. We just have a strong prior we're building in
+that this border tends to be elliptical.
+
+So it's interesting to put this another way: we held the  {\bf distributions} defined by
+$(\alpha_0,\alpha_1)$ {\bf fixed}, and then {\bf optimized the parameters} that
+determine the sources-background boundaries.
+This reminds me very much of the ``M'' step in EM. 
+
+We didn't do the analogous E step, but could have: hold the
+boundaries fixed, and move the $\alpha$ vectors.
+
+Q: how close is the correspondence with EM here? Not even sure I've
+got E and M associated right - just a hunch so far.
+
+Is our current $K=2, \theta$ scheme actually a parameterised
+generative model for the image? I guess so. Think of a single source,
+so $\theta$ a single 5-dim vector. Classic EM: E is estimate the
+posterior over latent variables, given the data, which we can think of
+as finding the $\alpha$'s that correspond best to the ``correct''
+posterior(s) over the (latent) histograms for background and
+source. Right?
+
+Then the M step is to take those as read and optimize the parameters $\theta$.
+
+I {\it think} this makes sense, and gives the obvious generalisation
+to $K>2$ that we might make use of.
+
+Needs some serious brainstorming...
+
 \end{document}
