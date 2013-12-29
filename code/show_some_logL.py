@@ -52,7 +52,7 @@ if __name__ == "__main__":
     print('rowvals: ', rowvals)
     colormap = 'gist_heat' #'RdYlBu'
     #------------------------------------------------------------
-    counts = np.array([2,8])
+    counts = np.array([1,1])
     ax1 = plt.subplot(221)
     A = make_array_of_logLs(counts, rowvals, colvals)
     img = ax1.imshow(A,interpolation='nearest',origin='lowerleft',cmap=colormap)
@@ -63,21 +63,21 @@ if __name__ == "__main__":
     ax1.set_xlabel(r'$\alpha_0-1$',fontsize=18)
     ax1.set_ylabel(r'$\alpha_1-1$',fontsize=18)
     #------------------------------------------------------------
-    counts = np.array([0,10])
+    counts = np.array([100,100])
     ax1 = plt.subplot(222)
     A = make_array_of_logLs(counts, rowvals, colvals)
     img = ax1.imshow(A,interpolation='nearest',origin='lowerleft',cmap=colormap)
     plt.colorbar(img, ax=ax1, orientation='vertical',shrink=0.75)
     ax1.set_title('counts of %s'%(str(counts.tolist())))
     #------------------------------------------------------------
-    counts = np.array([1,1])
+    counts = np.array([1,4])
     ax1 = plt.subplot(223)
     A = make_array_of_logLs(counts, rowvals, colvals)
     img = ax1.imshow(A,interpolation='nearest',origin='lowerleft',cmap=colormap)
     plt.colorbar(img, ax=ax1, orientation='vertical',shrink=0.75)
     ax1.set_title('counts of %s'%(str(counts.tolist())))
     #------------------------------------------------------------
-    counts = np.array([10,10])
+    counts = np.array([100,400])
     ax1 = plt.subplot(224)
     A = make_array_of_logLs(counts, rowvals, colvals)
     img = ax1.imshow(A,interpolation='nearest',origin='lowerleft',cmap=colormap)
