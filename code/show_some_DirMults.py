@@ -4,14 +4,8 @@ import numpy.random as rng
 import pylab as pl
 import matplotlib.pyplot as plt
 
-def calc_log_gamma_vect(vect):
-    """Calculate the log gamma of each number in a vector """
-    v = np.array(vect) #+ 1e-10
-    if np.any(v<0.5): print 'FOUND ELEMENT <0.5 \n %s \n' % v
-    for i in range(v.size):       
-        v[i] = math.lgamma(v[i])
-    return v
 
+##############################################################################
 
 if __name__ == "__main__":
  
@@ -31,10 +25,11 @@ if __name__ == "__main__":
     fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
 
     axisNum = 0
+    expansion_factor = 5
     for row in range(N):
-        rowval = max(10*(N-1-row),1)
+        rowval = max(expansion_factor*(N-1-row),1)
         for col in range(N):
-            colval = max(10*col,1)
+            colval = max(expansion_factor*col,1)
             axisNum += 1
             ax = axes[row,col] #plt.subplot(N, N, axisNum)
             color = colors[axisNum % len(colors)]
@@ -61,4 +56,5 @@ if __name__ == "__main__":
     outfile = 'samples_from_dirichlet_multinomial'
     plt.savefig(outfile)
     print 'Wrote %s.png' % (outfile)
+
 
