@@ -2,7 +2,13 @@
 % Copyright 2013 the Authors.
 
 \documentclass[12pt]{article}
+\usepackage{amsmath,amssymb}
 \newcommand{\given}{\,|\,}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\balpha}{\mbox{\boldmath $\alpha$}}
+\newcommand{\btheta}{\mbox{\boldmath $\theta$}}
+\newcommand{\bphi}{\mbox{\boldmath $\phi$}}
+
 \begin{document}\sloppy\sloppypar
 
 \noindent
@@ -13,6 +19,7 @@
 \end{tabular}
 \bigskip
 
+(HOGG'S TAKE ON THIS)
 In the spirit of writing down what you \emph{should} do,
   and only then writing down what you \emph{actually} do,
   with connections drawn and approximations justified,
@@ -51,16 +58,20 @@ A more general model would permit patches to be drawn from mixtures of classes;
   the likelihood function would not have a $k$ to the right of the bar,
   it would have a vector $w$ of $K$ weights.
 
-\section{sort-of EM?}
-Anna and I used the $K=2$ model in which $\alpha_0$ has large numbers
-in it and corresponds to the background, and $\alpha_1 =
+\section{can we claim a generative model of astro images?}
+(MARCUS HAS A QUESTION)
+
+\subsection{preamble}
+
+We (Anna and Marcus) used the $K=2$ model in which $\alpha_0$ has
+large numbers in it and corresponds to the background, and $\alpha_1 =
 (1,1,\ldots,1)$ and models sources. We used the ratio of the
 associated posterior probs (a.k.a. the Bayes factor) for the pixel
 values in a region that we parameterised as a ``score'' for the
-sourciness of that region.
-Optimizing the score in the space of region parameters is source finding.
+sourciness of that region.  Optimizing the score in the space of
+region parameters is source finding.
 
-For the $i^{th}$ source, the source parameters $\theta_i =
+For the $i^{th}$ source, the source parameters $\btheta_i =
 (x,y,w_x,w_y,\phi)$ (ie. position, widths, and rotation) could be
 thought of as parameters specifying the border between source and
 background if you like. We just have a strong prior we're building in
@@ -77,19 +88,36 @@ boundaries fixed, and move the $\alpha$ vectors.
 Q: how close is the correspondence with EM here? Not even sure I've
 got E and M associated right - just a hunch so far.
 
-Is our current $K=2, \theta$ scheme actually a parameterised
-generative model for the image? I guess so. Think of a single source,
-so $\theta$ a single 5-dim vector. Classic EM: E is estimate the
-posterior over latent variables, given the data, which we can think of
-as finding the $\alpha$'s that correspond best to the ``correct''
-posterior(s) over the (latent) histograms for background and
-source. Right?
+\subsection{generative model?}
+Is our current scheme, in which we search for regions that have high
+Bayes Factor values, equivalent to optimizing a parameterised
+generative model for the image as a whole? We haven't thought about it
+in this way before.
 
-Then the M step is to take those as read and optimize the parameters $\theta$.
+Writing down that model would help us to generalise.
 
-I {\it think} this makes sense, and gives the obvious generalisation
-to $K>2$ that we might make use of.
+A generative model for an image containing a single source {\it might}
+go like this, assuming we're binning the intensities into $K$ bins:
+\begin{enumerate}
+\item make up 5 parameters $\btheta$ describing an elliptical region. For simplicity, let's assume the region has ``hard'' borders.
+\item note that $\btheta$ determines the numbers of pixels inside ($N_{SRC}$)  and  outside ($N_{BG}$) the region.
+\item set up $\balpha_{SRC} \in \mathbb{R}^K$, with small numbers,
+  and $\balpha_{BG} \in \mathbb{R}^K$, with big numbers, especially at the bins corresponding to low amplitudes.
+\item sample bin counts:
+  \begin{itemize}
+    \item    $\vec{n}_{SRC} \sim DM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
+    \item $\vec{n}_{BG} \sim DM(\vec{n} \given \balpha_{BG}, N_{BG})$
+  \end{itemize}
+\end{enumerate}
+That's it?!
 
-Needs some serious brainstorming...
+\subsection{question of the day}
+Our procedure is: move region parameters $\btheta$ to increase Bayes Factor $\log \frac{\Pr(\vec{n}_{SRC} \given \balpha_{SRC}, N_{SRC})}{\Pr(\vec{n}_{SRC} \given \balpha_{BG}, N_{SRC})}
+{}$.
+
+Is this the {\bf same} as finding $\btheta$ that (say) maximize the log
+likelihood of the image under the above generative model???
+
+If it's not the same, how are the two related, and which is preferable?!
 
 \end{document}
