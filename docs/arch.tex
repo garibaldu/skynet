@@ -8,6 +8,7 @@
 \newcommand{\balpha}{\mbox{\boldmath $\alpha$}}
 \newcommand{\btheta}{\mbox{\boldmath $\theta$}}
 \newcommand{\bphi}{\mbox{\boldmath $\phi$}}
+\newcommand{\bn}{\mbox{\boldmath $n$}}
 
 \begin{document}\sloppy\sloppypar
 
@@ -105,10 +106,25 @@ go like this, assuming we're binning the intensities into $K$ bins:
   and $\balpha_{BG} \in \mathbb{R}^K$, with big numbers, especially at the bins corresponding to low amplitudes.
 \item sample bin counts:
   \begin{itemize}
-    \item    $\vec{n}_{SRC} \sim DM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
-    \item $\vec{n}_{BG} \sim DM(\vec{n} \given \balpha_{BG}, N_{BG})$
+    \item    $\vec{n}_{SRC} \sim DCM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
+    \item $\vec{n}_{BG} \sim DCM(\vec{n} \given \balpha_{BG}, N_{BG})$
   \end{itemize}
 \end{enumerate}
+where following Wikipedia ``DCM'' stands for the Dirichlet compound multinomial distribution:
+
+\begin{align}
+\text{DCM}(\bn|\alpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_k \frac{\Gamma(\bn_k+\alpha_k)}{\Gamma(\alpha_k)}  
+\label{eq:muldir} 
+\intertext{where}
+A &= \sum_k \alpha_k, \;\;\;\;\;\;\;\; N = \sum_k \bn_k
+\end{align}
+
+Taking logs,
+\begin{align}
+\log P(\bn|\alpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_k \log \Gamma(\bn_k+\alpha_k) - \log \Gamma(\alpha_k) \label{eq:logmultdir}
+\end{align}
+
+
 That's it?!
 
 \subsection{question of the day}
@@ -116,8 +132,40 @@ Our procedure is: move region parameters $\btheta$ to increase Bayes Factor $\lo
 {}$.
 
 Is this the {\bf same} as finding $\btheta$ that (say) maximize the log
-likelihood of the image under the above generative model???
+likelihood of the image under the above generative model?
+If it's not the same, how are the two related, and which is preferable?
 
-If it's not the same, how are the two related, and which is preferable?!
+
+From here I'm switching to using a superscript ``0'' for background
+and ``1'' to denote source, hoping that this won't be confused with
+exponentiation!
+
+My model of the image takes parameters $\theta, \balpha^0, \balpha^1$,
+and generates just one ``data point'' consisting of two vectors of
+counts $\vec{n}^0,\vec{n}^1$. 
+
+
+The likelihood is therefore
+\begin{align}
+L =& \text{DCM}(\vec{n}_0 \mid \balpha_0) \; \text{DCM}(\vec{n}_1 \mid \balpha_1) 
+\end{align}
+
+Taking logs,
+\begin{align*}
+\log L =& \text{logDCM}(\vec{n}_0 \mid \balpha_0) \;\; + \;\; \text{logDCM}(\vec{n}_1 \mid \balpha_1) \\ \\
+% =& \log \Gamma(A^0) - \log \Gamma(N^0+A^0) + \sum_k \log \Gamma(\bn^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) \;\; + \;\; \log \Gamma(A^1) - \log \Gamma(N^1+A^1) + \sum_k \log \Gamma(\bn^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1)  \\
+ =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_k \log \Gamma(\bn^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) + \sum_k \log \Gamma(\bn^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1) 
+\end{align*}
+
+Denote the derivative of the gamma function $\Gamma(n)$ by $\psi(n)$.
+
+The gradient of the log likelihood w.r.t. $\theta$ is
+\begin{align}
+\frac{\partial}{\partial \theta} 
+\log L &= 
+\end{align}
+
+
+
 
 \end{document}
