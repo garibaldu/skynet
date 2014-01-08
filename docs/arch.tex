@@ -9,6 +9,7 @@
 \newcommand{\btheta}{\mbox{\boldmath $\theta$}}
 \newcommand{\bphi}{\mbox{\boldmath $\phi$}}
 \newcommand{\bn}{\mbox{\boldmath $n$}}
+\newcommand{\DCM}{\mbox{DCM}}
 
 \begin{document}\sloppy\sloppypar
 
@@ -59,13 +60,12 @@ A more general model would permit patches to be drawn from mixtures of classes;
   the likelihood function would not have a $k$ to the right of the bar,
   it would have a vector $w$ of $K$ weights.
 
+(MARCUS STUFF FOLLOWS)
 \section{can we claim a generative model of astro images?}
-(MARCUS HAS A QUESTION)
-
 \subsection{preamble}
 
-We (Anna and Marcus) used the $K=2$ model in which $\alpha_0$ has
-large numbers in it and corresponds to the background, and $\alpha_1 =
+We (Anna and Marcus) used the $K=2$ model in which $\balpha_0$ has
+large numbers in it and corresponds to the background, and $\balpha_1 =
 (1,1,\ldots,1)$ and models sources. We used the ratio of the
 associated posterior probs (a.k.a. the Bayes factor) for the pixel
 values in a region that we parameterised as a ``score'' for the
@@ -78,25 +78,31 @@ thought of as parameters specifying the border between source and
 background if you like. We just have a strong prior we're building in
 that this border tends to be elliptical.
 
-So it's interesting to put this another way: we held the  {\bf distributions} defined by
-$(\alpha_0,\alpha_1)$ {\bf fixed}, and then {\bf optimized the parameters} that
-determine the sources-background boundaries.
-This reminds me very much of the ``M'' step in EM. 
+So it's interesting to put this another way: we held the {\bf
+  distributions} defined by $(\alpha_0,\alpha_1)$ {\bf fixed}, and
+then {\bf optimized the parameters} that determine the
+sources-background boundaries.  This reminds me very much of the ``M''
+step in EM.
 
 We didn't do the analogous E step, but could have: hold the
 boundaries fixed, and move the $\alpha$ vectors.
 
-Q: how close is the correspondence with EM here? Not even sure I've
-got E and M associated right - just a hunch so far.
+So... how close is the correspondence with EM here? Not even sure I've
+got E and M associated right - just a hunch so far. EM does max likelihood, so what is the likelihood in our case..?
 
-\subsection{generative model?}
 Is our current scheme, in which we search for regions that have high
 Bayes Factor values, equivalent to optimizing a parameterised
-generative model for the image as a whole? We haven't thought about it
-in this way before.
+generative model of the image as a whole? We haven't thought about it
+in this way before, but writing down such a model would help us to
+generalise the scheme to more than two classes.
 
-Writing down that model would help us to generalise.
+Our procedure is: move region parameters $\btheta$ to increase Bayes Factor $\log \frac{\Pr(\vec{n}_{SRC} \given \balpha_{SRC}, N_{SRC})}{\Pr(\vec{n}_{SRC} \given \balpha_{BG}, N_{SRC})}$.
 
+Is this the {\bf same} as finding $\btheta$ that (say) maximize the log
+likelihood of the image under the above generative model?
+If it's not the same, how are the two related, and which is preferable?
+
+\subsection{generative model}
 A generative model for an image containing a single source {\it might}
 go like this, assuming we're binning the intensities into $K$ bins:
 \begin{enumerate}
@@ -106,14 +112,15 @@ go like this, assuming we're binning the intensities into $K$ bins:
   and $\balpha_{BG} \in \mathbb{R}^K$, with big numbers, especially at the bins corresponding to low amplitudes.
 \item sample bin counts:
   \begin{itemize}
-    \item    $\vec{n}_{SRC} \sim DCM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
-    \item $\vec{n}_{BG} \sim DCM(\vec{n} \given \balpha_{BG}, N_{BG})$
+    \item    $\vec{n}_{SRC} \sim \DCM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
+    \item $\vec{n}_{BG} \sim \DCM(\vec{n} \given \balpha_{BG}, N_{BG})$
   \end{itemize}
 \end{enumerate}
-where following Wikipedia ``DCM'' stands for the Dirichlet compound multinomial distribution:
+where (following Wikipedia...) ``DCM'' stands for the Dirichlet
+compound multinomial distribution:
 
 \begin{align}
-\text{DCM}(\bn|\alpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_k \frac{\Gamma(\bn_k+\alpha_k)}{\Gamma(\alpha_k)}  
+\DCM(\bn|\alpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_k \frac{\Gamma(\bn_k+\alpha_k)}{\Gamma(\alpha_k)}  
 \label{eq:muldir} 
 \intertext{where}
 A &= \sum_k \alpha_k, \;\;\;\;\;\;\;\; N = \sum_k \bn_k
@@ -121,24 +128,18 @@ A &= \sum_k \alpha_k, \;\;\;\;\;\;\;\; N = \sum_k \bn_k
 
 Taking logs,
 \begin{align}
-\log P(\bn|\alpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_k \log \Gamma(\bn_k+\alpha_k) - \log \Gamma(\alpha_k) \label{eq:logmultdir}
+\log \DCM(\bn|\alpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_k \log \Gamma(\bn_k+\alpha_k) - \log \Gamma(\alpha_k) \label{eq:logmultdir}
 \end{align}
 
-
-That's it?!
-
-\subsection{question of the day}
-Our procedure is: move region parameters $\btheta$ to increase Bayes Factor $\log \frac{\Pr(\vec{n}_{SRC} \given \balpha_{SRC}, N_{SRC})}{\Pr(\vec{n}_{SRC} \given \balpha_{BG}, N_{SRC})}
-{}$.
-
-Is this the {\bf same} as finding $\btheta$ that (say) maximize the log
-likelihood of the image under the above generative model?
-If it's not the same, how are the two related, and which is preferable?
-
-
-From here I'm switching to using a superscript ``0'' for background
-and ``1'' to denote source, hoping that this won't be confused with
-exponentiation!
+Denoting the derivative of the log gamma function $\frac{\partial}{\partial n}\log \Gamma(n)$ by $\psi(n)$, the gradient of $\log \DCM$ w.r.t. $\theta$ is
+\begin{align}
+\frac{\partial}{\partial \theta} \log \DCM(\bn|\alpha) &= \sum_k \bigg[  \psi(\bn_k+\alpha_k) - \psi(N+A) \bigg] \frac{\partial \bn_k}{\partial \theta}
+\\
+&= \sum_k W_k \frac{\partial \bn_k}{\partial \theta} 
+\intertext{where}
+W_k &= \psi(\bn_k+\alpha_k) - \psi(N+A)
+\label{eq:gradientLogDCM}
+\end{align}
 
 My model of the image takes parameters $\theta, \balpha^0, \balpha^1$,
 and generates just one ``data point'' consisting of two vectors of
@@ -147,25 +148,60 @@ counts $\vec{n}^0,\vec{n}^1$.
 
 The likelihood is therefore
 \begin{align}
-L =& \text{DCM}(\vec{n}_0 \mid \balpha_0) \; \text{DCM}(\vec{n}_1 \mid \balpha_1) 
+L =& \DCM(\vec{n}_0 \mid \balpha_0) \;\; \DCM(\vec{n}_1 \mid \balpha_1) 
 \end{align}
 
 Taking logs,
 \begin{align*}
-\log L =& \text{logDCM}(\vec{n}_0 \mid \balpha_0) \;\; + \;\; \text{logDCM}(\vec{n}_1 \mid \balpha_1) \\ \\
-% =& \log \Gamma(A^0) - \log \Gamma(N^0+A^0) + \sum_k \log \Gamma(\bn^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) \;\; + \;\; \log \Gamma(A^1) - \log \Gamma(N^1+A^1) + \sum_k \log \Gamma(\bn^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1)  \\
- =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_k \log \Gamma(\bn^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) + \sum_k \log \Gamma(\bn^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1) 
+\log L =& \log \DCM(\vec{n}_0 \mid \balpha_0) \;\; + \;\; \log \DCM(\vec{n}_1 \mid \balpha_1) \\ \\
+ =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_k \log \Gamma(n^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) + \sum_k \log \Gamma(n^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1) 
 \end{align*}
 
-Denote the derivative of the gamma function $\Gamma(n)$ by $\psi(n)$.
+This doesn't seem much like our Bayes factor though, since it adds the
+two $\log \DCM$ terms instead of taking their differences!
 
-The gradient of the log likelihood w.r.t. $\theta$ is
+\subsection{gradients}
+
+Using Eq \ref{eq:gradientLogDCM}, the gradient of the log likelihood w.r.t. $\theta$ is
 \begin{align}
-\frac{\partial}{\partial \theta} 
-\log L &= 
+\frac{\partial}{\partial \theta} \log L
+&= \frac{\partial}{\partial \theta} \bigg[ \log \DCM(\bn^0|\alpha^0)  + \log \DCM(\bn^1|\alpha^1) \bigg] \\
+&= \sum_k \bigg[ 
+W^0_k \frac{\partial n^0_k}{\partial \theta}  \;\;+\;\; W^1_k \frac{\partial n^1_k}{\partial \theta} 
+\bigg]
+\intertext{where}
+W^c_k &= \psi(n^c_k+\alpha^c_k) - \psi(N^c+A^c)
+\label{eq:gradientLogL}
 \end{align}
 
+In the two-class situation, we know that $n^0_k + n^1_k$ is a
+constant, namely the number of pixels $n_k$ in the \emph{whole image} that fall
+into the $k^\text{th}$ bin, and this doesn't depend on $\theta$ at all, so
+\begin{align}
+\frac{\partial}{\partial \theta} \log L
+&= \sum_k \bigg[ 
+W^0_k \frac{\partial (n_k - n^1_k)}{\partial \theta}  \;\;+\;\; W^1_k \frac{\partial n^1_k}{\partial \theta} 
+\bigg] \\
+&= \sum_k 
+\big( W^1_k - W^0_k  \big) \;
+\frac{\partial n^1_k}{\partial \theta}  \\
+&= \sum_k 
+\bigg[ 
+\psi(n^1_k+\alpha^1_k) - \psi(n^0_k+\alpha^0_k)  \bigg] \;
+\frac{\partial n^1_k}{\partial \theta} 
+\end{align}
 
+Compare this to the gradient of our Bayes factor, which is...
 
+\begin{align}
+\frac{\partial}{\partial\theta}\text{Score}(\theta) 
+&= \sum_k [\underbrace{\psi(n_k + \alpha^S_k) - \psi(n_k + \alpha^B_k)}_{\text{denote} \; Q_k}] \frac{\partial n_k^{(\theta)}}{\partial\theta} \notag\\
+& - \;\;\; [\psi(N+A^S) - \psi(N+A^B)]\sum_k \frac{\partial n_k^{(\theta)}}{\partial\theta}\\
+&= \sum_k  Q_k \, \frac{\partial n_k^{(\theta)}}{\partial\theta}\;-\;
+\sum_k
+\underbrace{ [\psi(N+A^S) - \psi(N+A^B)}_{\text{denote} \; Q_\text{base}}] \frac{\partial n_k^{(\theta)}}{\partial\theta}\\
+&= \sum_k (Q_k - Q_\text{base}) \; \frac{\partial n_k^{(\theta)}}{\partial\theta} \label{eq:score-grad-1d}
+\end{align}
+%with the above definitions for $Q_k$ and $Q_\text{base}$.
 
 \end{document}
