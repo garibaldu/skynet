@@ -11,6 +11,11 @@
 \newcommand{\bn}{\mbox{\boldmath $n$}}
 \newcommand{\DCM}{\mbox{DCM}}
 
+% paragraphs guff
+\setlength{\parindent}{0in}
+\setlength{\parskip}{0.14in plus 0.07in minus 0.07in}
+
+
 \begin{document}\sloppy\sloppypar
 
 \noindent
@@ -29,12 +34,12 @@ In the spirit of writing down what you \emph{should} do,
 The setup is that we have split our imaging up into $N$ tiny
   (possibly overlapping) patches $y_n$.
 The standard kind of machine-learning thing would be to
-  say that there are $K$ (possibly infinite) classes $k$,
+  say that there are $I$ (possibly infinite) classes $k$,
   and that each image patch is drawn from precisely one of these classes.
-Each class $k$ has a vector $\alpha_k$ of parameters
+Each class $k$ has a vector $\balpha^k$ of parameters
   that define a frequency distribution
   for the patches drawn from that class.
-That is, there is a well defined likelihood function $p(y_n\given k, \alpha_k)$.
+That is, there is a well defined likelihood function $p(y_n\given k, \balpha^k)$.
 
 A model is a likelihood function plus prior pdfs.
 Ideally, $p(k)$ would be an exceedingly flexible function,
@@ -44,10 +49,10 @@ Ideally $K$ itself would also have a prior probability assigned,
   it could just be set to a very large number up-front.
 A default plan would be 
   (except possibly for one or two special classes,
-   $\alpha_0$ and $\alpha_K$, for example)
-  to make $p(alpha_k)$ not depend on $k$.
+   $\balpha^0$ and $\balpha^K$, for example)
+  to make $p(alpha^k)$ not depend on $k$.
 This is consistent with the idea that we want to work ``unsupervised''.
-Putting in priors about how $\alpha_k$ should vary with $k$ is a kind of soft supervision.
+Putting in priors about how $\balpha^k$ should vary with $k$ is a kind of soft supervision.
 
 That's an extremely general model,
   though it is \emph{not} as general as you can go,
@@ -61,147 +66,235 @@ A more general model would permit patches to be drawn from mixtures of classes;
   it would have a vector $w$ of $K$ weights.
 
 (MARCUS STUFF FOLLOWS)
-\section{can we claim a generative model of astro images?}
-\subsection{preamble}
 
-We (Anna and Marcus) used the $K=2$ model in which $\balpha_0$ has
-large numbers in it and corresponds to the background, and $\balpha_1 =
-(1,1,\ldots,1)$ and models sources. We used the ratio of the
-associated posterior probs (a.k.a. the Bayes factor) for the pixel
-values in a region that we parameterised as a ``score'' for the
-sourciness of that region.  Optimizing the score in the space of
-region parameters is source finding.
+\section{a generative model of astro images}
 
-For the $i^{th}$ source, the source parameters $\btheta_i =
-(x,y,w_x,w_y,\phi)$ (ie. position, widths, and rotation) could be
-thought of as parameters specifying the border between source and
-background if you like. We just have a strong prior we're building in
-that this border tends to be elliptical.
+\subsection{basics of DCM distribution}
+(following Wikipedia...) ``DCM'' stands for the Dirichlet compound
+multinomial distribution over an $I$-dimensional vector of counts
+$\bn$:
 
-So it's interesting to put this another way: we held the {\bf
-  distributions} defined by $(\alpha_0,\alpha_1)$ {\bf fixed}, and
+\begin{align}
+\DCM(\bn|\balpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_i^I \frac{\Gamma(n_i+\alpha_i)}{\Gamma(\alpha_i)}  
+%\intertext{where}
+\;\;\;\;\;\;\;\;\; \text{with} \;A = \sum_i^I \alpha_i, \;\;\; N = \sum_i^I n_i
+\notag \intertext{Taking logs,}
+\log \DCM(\bn|\balpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_i \log \Gamma(n_i+\alpha_i) - \log \Gamma(\alpha_i) \label{eq:logmultdir}
+\end{align}
+
+Denoting the derivative of the log gamma function $\frac{\partial}{\partial n}\log \Gamma(n)$ by $\psi(n)$, the gradient of $\log \DCM$ w.r.t. $\theta$ is
+\begin{align}
+\frac{\partial}{\partial \theta} \log \DCM(\bn|\balpha) &= \sum_i \bigg[  \psi(n_i+\alpha_i) - \psi(N+A) \bigg] \frac{\partial n_i}{\partial \theta}
+\\
+&= \sum_i W_i \, \frac{\partial n_i}{\partial \theta} 
+\label{eq:gradientLogDCM}
+\end{align}
+where $W_i = \psi(n_i+\alpha_i) - \psi(N+A)$.
+
+
+\subsection{our use of Bayes factor in source finding}
+{\sc FreanFriedlanderJohnsonHollitt2013} used the two-class model in which
+$\balpha^0$ has large numbers in it and corresponds to the background,
+and $\balpha^1 = (1,1,\ldots,1)$ representing our ignorance regarding
+the source distribution. We used the ratio of the associated posterior
+probs (a.k.a. the ``Bayes factor'') for the pixel values in a region
+as a ``score'' for the sourciness of that region.  For a single
+source, the source parameters $\btheta = (x,y,w_x,w_y,\phi)$
+(ie. position, widths, and rotation) could be thought of as parameters
+specifying the border between source and background if you like. We
+just have a strong prior we're building in that this border tends to
+be elliptical.  Our procedure is: move region parameters $\btheta$ to
+increase Bayes Factor\footnote{Actually the ratio of \emph{posterior}
+  probabilities rather than just the likelihoods, which leads to an
+  additional additive constant.} $\log \frac{\DCM(\vec{n}^1 \given
+  \balpha^1)}{\DCM(\vec{n}^1 \given \balpha^0)}$.  Thus optimizing the
+score in the space of region parameters amounts to source finding.
+
+
+\subsection{EM-ish?}
+
+It's interesting to put this another way: we held the {\bf
+  distributions} defined by $(\balpha^0,\balpha^1)$ {\bf fixed}, and
 then {\bf optimized the parameters} that determine the
 sources-background boundaries.  This reminds me very much of the ``M''
 step in EM.
 
 We didn't do the analogous E step, but could have: hold the
-boundaries fixed, and move the $\alpha$ vectors.
+boundaries fixed, and move the $\balpha$ vectors.
 
 So... how close is the correspondence with EM here? Not even sure I've
 got E and M associated right - just a hunch so far. EM does max likelihood, so what is the likelihood in our case..?
 
+Exercises for the Reader:
+\begin{itemize}
+\item is maximizing the Bayes factor the {\bf same} as finding
+  $\btheta$ that (say) maximize the log likelihood of the image under
+  some generative model? 
+\item if it is, what's the generative model?
+\item if it's not the same, how are the two related, and which is preferable?
+\end{itemize}
+
+Quick answer: they're not quite the same - the log likelihood is of
+the WHOLE image, so gets hurt by any other source regions, whereas the
+Bayes factor only involves the local patch and is not hurt by other
+regions in the image.
+
+
+\subsection{generative model}
 Is our current scheme, in which we search for regions that have high
-Bayes Factor values, equivalent to optimizing a parameterised
-generative model of the image as a whole? We haven't thought about it
+Bayes Factor values, equivalent or close to optimizing a parameterised
+generative model of the \emph{image as a whole}? We haven't thought about it
 in this way before, but writing down such a model would help us to
 generalise the scheme to more than two classes.
 
-Our procedure is: move region parameters $\btheta$ to increase Bayes Factor $\log \frac{\Pr(\vec{n}_{SRC} \given \balpha_{SRC}, N_{SRC})}{\Pr(\vec{n}_{SRC} \given \balpha_{BG}, N_{SRC})}$.
-
-Is this the {\bf same} as finding $\btheta$ that (say) maximize the log
-likelihood of the image under the above generative model?
-If it's not the same, how are the two related, and which is preferable?
-
-\subsection{generative model}
-A generative model for an image containing a single source {\it might}
-go like this, assuming we're binning the intensities into $K$ bins:
+A generative model for an image containing a single source \emph{might}
+go as follows, assuming we're binning the intensities into $I$ bins:
 \begin{enumerate}
-\item make up 5 parameters $\btheta$ describing an elliptical region. For simplicity, let's assume the region has ``hard'' borders.
-\item note that $\btheta$ determines the numbers of pixels inside ($N_{SRC}$)  and  outside ($N_{BG}$) the region.
-\item set up $\balpha_{SRC} \in \mathbb{R}^K$, with small numbers,
-  and $\balpha_{BG} \in \mathbb{R}^K$, with big numbers, especially at the bins corresponding to low amplitudes.
+\item make up 5 parameters $\btheta$ describing an elliptical region. 
+%For simplicity, let's assume the region has ``hard'' borders.
+\item note that $\btheta$ determines the numbers of pixels inside ($N^1$)  and  outside ($N^0$) the region.
+\item set up $\balpha^1 \in \mathbb{R}^I$, with small numbers,
+  and $\balpha^0 \in \mathbb{R}^I$, with big numbers, especially at the bins corresponding to low amplitudes.
 \item sample bin counts:
   \begin{itemize}
-    \item    $\vec{n}_{SRC} \sim \DCM(\vec{n} \given \balpha_{SRC}, N_{SRC})$, and 
-    \item $\vec{n}_{BG} \sim \DCM(\vec{n} \given \balpha_{BG}, N_{BG})$
+    \item    $\vec{n}^1 \sim \DCM(\vec{n} \given \balpha^1, N^1)$
+    \item $\vec{n}^0 \sim \DCM(\vec{n} \given \balpha^0, N^0)$
   \end{itemize}
 \end{enumerate}
-where (following Wikipedia...) ``DCM'' stands for the Dirichlet
-compound multinomial distribution:
-
-\begin{align}
-\DCM(\bn|\alpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_k \frac{\Gamma(\bn_k+\alpha_k)}{\Gamma(\alpha_k)}  
-\label{eq:muldir} 
-\intertext{where}
-A &= \sum_k \alpha_k, \;\;\;\;\;\;\;\; N = \sum_k \bn_k
-\end{align}
-
-Taking logs,
-\begin{align}
-\log \DCM(\bn|\alpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_k \log \Gamma(\bn_k+\alpha_k) - \log \Gamma(\alpha_k) \label{eq:logmultdir}
-\end{align}
-
-Denoting the derivative of the log gamma function $\frac{\partial}{\partial n}\log \Gamma(n)$ by $\psi(n)$, the gradient of $\log \DCM$ w.r.t. $\theta$ is
-\begin{align}
-\frac{\partial}{\partial \theta} \log \DCM(\bn|\alpha) &= \sum_k \bigg[  \psi(\bn_k+\alpha_k) - \psi(N+A) \bigg] \frac{\partial \bn_k}{\partial \theta}
-\\
-&= \sum_k W_k \frac{\partial \bn_k}{\partial \theta} 
-\intertext{where}
-W_k &= \psi(\bn_k+\alpha_k) - \psi(N+A)
-\label{eq:gradientLogDCM}
-\end{align}
 
 My model of the image takes parameters $\theta, \balpha^0, \balpha^1$,
 and generates just one ``data point'' consisting of two vectors of
-counts $\vec{n}^0,\vec{n}^1$. 
-
-
-The likelihood is therefore
+counts $\vec{n}^0,\vec{n}^1$.  The likelihood is therefore
 \begin{align}
-L =& \DCM(\vec{n}_0 \mid \balpha_0) \;\; \DCM(\vec{n}_1 \mid \balpha_1) 
+L =& \DCM(\vec{n}^0 \mid \balpha^0) \; \cdot \; \DCM(\vec{n}^1 \mid \balpha^1) 
 \end{align}
 
 Taking logs,
 \begin{align*}
-\log L =& \log \DCM(\vec{n}_0 \mid \balpha_0) \;\; + \;\; \log \DCM(\vec{n}_1 \mid \balpha_1) \\ \\
- =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_k \log \Gamma(n^0_k + \alpha_k^0) - \log \Gamma(\alpha_k^0) + \sum_k \log \Gamma(n^1_k + \alpha_k^1) - \log \Gamma(\alpha_k^1) 
+\log L =& \log \DCM(\vec{n}^0 \mid \balpha^0) \;\; + \;\; \log \DCM(\vec{n}^1 \mid \balpha^1) 
+%\\ \\ =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_i \log \Gamma(n^0_i + \alpha_i^0) - \log \Gamma(\alpha_i^0) + \sum_i \log \Gamma(n^1_i + \alpha_i^1) - \log \Gamma(\alpha_i^1) 
 \end{align*}
 
-This doesn't seem much like our Bayes factor though, since it adds the
-two $\log \DCM$ terms instead of taking their differences!
+This doesn't seem much like our Bayes factor though, since it
+\emph{adds} instead of subtracts the two $\log \DCM$ terms! The terms
+are slightly different too.  Here they are, for direct comparison:
+
+\begin{tabular}{|l|l|}
+\hline
+log DMR (Bayes Factor): & 
+\parbox{.7\textwidth}{
+\begin{align*}
+&\log \DCM(\vec{n}^1 \given \balpha^1) \;\;-\;\; \log \DCM(\vec{n}^1 \given \balpha^0)
+\end{align*}
+} \\
+\hline
+Log L: & 
+\parbox{.7\textwidth}{
+\begin{align*}
+& \log \DCM(\vec{n}^1 \mid \balpha^1) \;\; + \;\; \log \DCM(\vec{n}^0 \mid \balpha^0)
+\end{align*}
+} \\
+\hline
+``contrastive'' Log L: & 
+\parbox{.7\textwidth}{
+\begin{align*}
+&\log \DCM(\vec{n}^1 \mid \balpha^1) \;\; - \;\; \log \DCM(\vec{n}^1 \mid \balpha^0) 
+\end{align*}
+} \\
+\hline
+\end{tabular}
+
+Note that with $\log L$ we're modelling the whole image in that
+$\bn^0$ is involved, but with the Bayes factor we are only considering
+the current region. I think it's an interesting question which is
+``better'' and in what sense.
+
+The third option (labelled ``contrastive'') is just the log likelihood
+under the generative model given, minus the log likelihood you'd get
+using background model ($\balpha^0$) everywhere, both for the $\bn^0$ counts and the $\bn^1$ counts. That exactly matches the Bayes factor...!
+
+So.... ?? 
+
+Which is better, in principle and practice?
 
 \subsection{gradients}
+\emph{The following is chasing down an intuition that the sum over n will result in a negative that make the two schemes look more similar.}
 
 Using Eq \ref{eq:gradientLogDCM}, the gradient of the log likelihood w.r.t. $\theta$ is
 \begin{align}
 \frac{\partial}{\partial \theta} \log L
-&= \frac{\partial}{\partial \theta} \bigg[ \log \DCM(\bn^0|\alpha^0)  + \log \DCM(\bn^1|\alpha^1) \bigg] \\
-&= \sum_k \bigg[ 
-W^0_k \frac{\partial n^0_k}{\partial \theta}  \;\;+\;\; W^1_k \frac{\partial n^1_k}{\partial \theta} 
+&= \frac{\partial}{\partial \theta} \bigg[ \log \DCM(\bn^0|\balpha^0)  + \log \DCM(\bn^1|\balpha^1) \bigg] \\
+&= \sum_i \bigg[ 
+W^0_i \frac{\partial n^0_i}{\partial \theta}  \;\;+\;\; W^1_i \frac{\partial n^1_i}{\partial \theta} 
 \bigg]
 \intertext{where}
-W^c_k &= \psi(n^c_k+\alpha^c_k) - \psi(N^c+A^c)
+W^c_i &= \psi(n^c_i+\alpha^c_i) - \psi(N^c+A^c)
 \label{eq:gradientLogL}
 \end{align}
 
-In the two-class situation, we know that $n^0_k + n^1_k$ is a
-constant, namely the number of pixels $n_k$ in the \emph{whole image} that fall
-into the $k^\text{th}$ bin, and this doesn't depend on $\theta$ at all, so
+In the two-class situation, we know that $n^0_i + n^1_i$ is a
+constant, namely the number of pixels $n_i$ in the \emph{whole image} that fall
+into the $i^\text{th}$ bin, and this doesn't depend on $\theta$ at all, so
 \begin{align}
 \frac{\partial}{\partial \theta} \log L
-&= \sum_k \bigg[ 
-W^0_k \frac{\partial (n_k - n^1_k)}{\partial \theta}  \;\;+\;\; W^1_k \frac{\partial n^1_k}{\partial \theta} 
+&= \sum_i \bigg[ 
+W^0_i \frac{\partial (n_i - n^1_i)}{\partial \theta}  \;\;+\;\; W^1_i \frac{\partial n^1_i}{\partial \theta} 
 \bigg] \\
-&= \sum_k 
-\big( W^1_k - W^0_k  \big) \;
-\frac{\partial n^1_k}{\partial \theta}  \\
-&= \sum_k 
+&= \sum_i 
+\big( W^1_i - W^0_i  \big) \;
+\frac{\partial n^1_i}{\partial \theta}  \\
+&= \sum_i 
 \bigg[ 
-\psi(n^1_k+\alpha^1_k) - \psi(n^0_k+\alpha^0_k)  \bigg] \;
-\frac{\partial n^1_k}{\partial \theta} 
+\psi(n^1_i+\alpha^1_i) - \psi(n^0_i+\alpha^0_i)  \bigg] \;
+\frac{\partial n^1_i}{\partial \theta} 
 \end{align}
 
 Compare this to the gradient of our Bayes factor, which is...
 
 \begin{align}
-\frac{\partial}{\partial\theta}\text{Score}(\theta) 
-&= \sum_k [\underbrace{\psi(n_k + \alpha^S_k) - \psi(n_k + \alpha^B_k)}_{\text{denote} \; Q_k}] \frac{\partial n_k^{(\theta)}}{\partial\theta} \notag\\
-& - \;\;\; [\psi(N+A^S) - \psi(N+A^B)]\sum_k \frac{\partial n_k^{(\theta)}}{\partial\theta}\\
-&= \sum_k  Q_k \, \frac{\partial n_k^{(\theta)}}{\partial\theta}\;-\;
-\sum_k
-\underbrace{ [\psi(N+A^S) - \psi(N+A^B)}_{\text{denote} \; Q_\text{base}}] \frac{\partial n_k^{(\theta)}}{\partial\theta}\\
-&= \sum_k (Q_k - Q_\text{base}) \; \frac{\partial n_k^{(\theta)}}{\partial\theta} \label{eq:score-grad-1d}
+\frac{\partial}{\partial\theta}\text{DMR}(\theta) 
+&= \sum_i \big[ \psi(n_i + \alpha^S_i) - \psi(n_i + \alpha^B_i) \big] \frac{\partial n^1_i}{\partial\theta} \notag\\
+& - \;\; \big[\psi(N^1+A^1) - \psi(N^1+A^0)]\sum_i \frac{\partial n^1_i}{\partial\theta}
 \end{align}
-%with the above definitions for $Q_k$ and $Q_\text{base}$.
+
+
+\begin{tabular}{|l|l|}
+\hline
+log DMR grad: &
+\parbox{.7\textwidth}{
+\begin{align*}
+&\sum_i \bigg[\psi(n^1_i + \alpha^1_i) - \psi(n^1_i + \alpha^0_i) \bigg] \frac{\partial n^1_i}{\partial\theta} \\
+ - & \big[\psi(N^1+A^1) - \psi(N^1+A^0) \big] \sum_i \frac{\partial n^1_i}{\partial\theta}
+\end{align*}
+} %end of box
+\\
+\hline
+Log L gradient: & 
+\parbox{.7\textwidth}{
+\begin{align*}
+& \sum_i 
+\bigg[ 
+\psi(n^1_i+\alpha^1_i) - \psi(n^0_i+\alpha^0_i)  \bigg] \;
+\frac{\partial n^1_i}{\partial \theta} 
+\end{align*} 
+} % ends box
+\\
+\hline
+``contrastive'' Log L gradient: & 
+\parbox{.7\textwidth}{
+\begin{align*}
+& \sum_i 
+\bigg[ 
+\psi(n^1_i+\alpha^1_i) 
+- \psi(n^1_i+\alpha^0_i) 
+\bigg] \;
+\frac{\partial n^1_i}{\partial \theta} 
+\end{align*} 
+} % ends box
+\\
+\hline
+\end{tabular}
+
+{\sc something is obvious wrong here: earlier I said contrastive was identical to bayes factor, so their gradients should match} :-(
 
 \end{document}
