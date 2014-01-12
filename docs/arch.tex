@@ -2,7 +2,20 @@
 % Copyright 2013 the Authors.
 
 \documentclass[12pt]{article}
+\usepackage{amsmath,amssymb}
 \newcommand{\given}{\,|\,}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\balpha}{\mbox{\boldmath $\alpha$}}
+\newcommand{\btheta}{\mbox{\boldmath $\theta$}}
+\newcommand{\bphi}{\mbox{\boldmath $\phi$}}
+\newcommand{\bn}{\mbox{\boldmath $n$}}
+\newcommand{\DCM}{\mbox{DCM}}
+
+% paragraphs guff
+\setlength{\parindent}{0in}
+\setlength{\parskip}{0.14in plus 0.07in minus 0.07in}
+
+
 \begin{document}\sloppy\sloppypar
 
 \noindent
@@ -13,6 +26,7 @@
 \end{tabular}
 \bigskip
 
+(HOGG'S TAKE ON THIS)
 In the spirit of writing down what you \emph{should} do,
   and only then writing down what you \emph{actually} do,
   with connections drawn and approximations justified,
@@ -20,12 +34,12 @@ In the spirit of writing down what you \emph{should} do,
 The setup is that we have split our imaging up into $N$ tiny
   (possibly overlapping) patches $y_n$.
 The standard kind of machine-learning thing would be to
-  say that there are $K$ (possibly infinite) classes $k$,
+  say that there are $I$ (possibly infinite) classes $k$,
   and that each image patch is drawn from precisely one of these classes.
-Each class $k$ has a vector $\alpha_k$ of parameters
+Each class $k$ has a vector $\balpha^k$ of parameters
   that define a frequency distribution
   for the patches drawn from that class.
-That is, there is a well defined likelihood function $p(y_n\given k, \alpha_k)$.
+That is, there is a well defined likelihood function $p(y_n\given k, \balpha^k)$.
 
 A model is a likelihood function plus prior pdfs.
 Ideally, $p(k)$ would be an exceedingly flexible function,
@@ -35,10 +49,10 @@ Ideally $K$ itself would also have a prior probability assigned,
   it could just be set to a very large number up-front.
 A default plan would be 
   (except possibly for one or two special classes,
-   $\alpha_0$ and $\alpha_K$, for example)
-  to make $p(alpha_k)$ not depend on $k$.
+   $\balpha^0$ and $\balpha^K$, for example)
+  to make $p(alpha^k)$ not depend on $k$.
 This is consistent with the idea that we want to work ``unsupervised''.
-Putting in priors about how $\alpha_k$ should vary with $k$ is a kind of soft supervision.
+Putting in priors about how $\balpha^k$ should vary with $k$ is a kind of soft supervision.
 
 That's an extremely general model,
   though it is \emph{not} as general as you can go,
@@ -51,45 +65,162 @@ A more general model would permit patches to be drawn from mixtures of classes;
   the likelihood function would not have a $k$ to the right of the bar,
   it would have a vector $w$ of $K$ weights.
 
-\section{sort-of EM?}
-Anna and I used the $K=2$ model in which $\alpha_0$ has large numbers
-in it and corresponds to the background, and $\alpha_1 =
-(1,1,\ldots,1)$ and models sources. We used the ratio of the
-associated posterior probs (a.k.a. the Bayes factor) for the pixel
-values in a region that we parameterised as a ``score'' for the
-sourciness of that region.
-Optimizing the score in the space of region parameters is source finding.
+(MARCUS STUFF FOLLOWS)
 
-For the $i^{th}$ source, the source parameters $\theta_i =
-(x,y,w_x,w_y,\phi)$ (ie. position, widths, and rotation) could be
-thought of as parameters specifying the border between source and
-background if you like. We just have a strong prior we're building in
-that this border tends to be elliptical.
+\section{a generative model of astro images}
 
-So it's interesting to put this another way: we held the  {\bf distributions} defined by
-$(\alpha_0,\alpha_1)$ {\bf fixed}, and then {\bf optimized the parameters} that
-determine the sources-background boundaries.
-This reminds me very much of the ``M'' step in EM. 
+\subsection{basics of DCM distribution}
+(following Wikipedia...) ``DCM'' stands for the Dirichlet compound
+multinomial distribution over an $I$-dimensional vector of counts
+$\bn$:
 
-We didn't do the analogous E step, but could have: hold the
-boundaries fixed, and move the $\alpha$ vectors.
+\begin{align}
+\DCM(\bn|\balpha) &= \frac{\Gamma(A)}{\Gamma(N+A)} \prod_i^I \frac{\Gamma(n_i+\alpha_i)}{\Gamma(\alpha_i)}  
+%\intertext{where}
+\;\;\;\;\;\;\;\;\; \text{with} \;A = \sum_i^I \alpha_i, \;\;\; N = \sum_i^I n_i
+\notag \intertext{Taking logs,}
+\log \DCM(\bn|\balpha) &= \log \Gamma(A) - \log \Gamma(N+A) + \sum_i \log \Gamma(n_i+\alpha_i) - \log \Gamma(\alpha_i) \label{eq:logmultdir}
+\end{align}
 
-Q: how close is the correspondence with EM here? Not even sure I've
-got E and M associated right - just a hunch so far.
+In our case, the counts $\bn$ are determined by the choice of region,
+parameterised by $\theta$, and so $\bn = \bn(\theta)$. For a single
+elliptical source, $\theta = (x,y,w_x,w_y,\phi)$ (ie. position,
+widths, and rotation).
 
-Is our current $K=2, \theta$ scheme actually a parameterised
-generative model for the image? I guess so. Think of a single source,
-so $\theta$ a single 5-dim vector. Classic EM: E is estimate the
-posterior over latent variables, given the data, which we can think of
-as finding the $\alpha$'s that correspond best to the ``correct''
-posterior(s) over the (latent) histograms for background and
-source. Right?
+Denoting the derivative of the log gamma function
+$\frac{\partial}{\partial n}\log \Gamma(n)$ by $\psi(n)$, the gradient
+of $\log \DCM$ w.r.t. $\theta$ is
+\begin{align}
+\frac{\partial}{\partial \theta} \log \DCM(\bn(\theta) |\balpha) 
+&= \sum_i W_i \, \frac{\partial n_i(\theta)}{\partial \theta} 
+%\sum_i \bigg[  \psi(n_i+\alpha_i) - \psi(N+A) \bigg] \frac{\partial n_i}{\partial \theta}
+\label{eq:gradientLogDCM}
+\intertext{where $W_i = \psi(n_i+\alpha_i) - \psi(N+A)$.}
+\end{align}
 
-Then the M step is to take those as read and optimize the parameters $\theta$.
 
-I {\it think} this makes sense, and gives the obvious generalisation
-to $K>2$ that we might make use of.
+\subsection{our use of Bayes factor in source finding} {\sc
+  FreanFriedlanderJohnsonHollitt2013} used the two-class model in
+which $\balpha^0$ has large numbers in it and corresponds to the
+background, and $\balpha^1 = (1,1,\ldots,1)$ representing our
+ignorance regarding the source distribution. We used the ratio of the
+associated posterior probs (a.k.a. the ``Bayes factor'') for the pixel
+values in a region as a ``score'' for the sourciness of that
+region. The source parameters $\btheta$ could be thought of as
+parameters specifying the border between source and background if you
+like. We just have a strong prior we're building in that this border
+tends to be elliptical.  Our procedure is: move region parameters
+$\btheta$ to increase Bayes Factor\footnote{Actually the ratio of
+  \emph{posterior} probabilities rather than just the likelihoods,
+  which leads to an additional additive constant.} $\log
+\frac{\DCM(\vec{n}^1 \given \balpha^1)}{\DCM(\vec{n}^1 \given
+  \balpha^0)}$.  Thus optimizing the score in the space of region
+parameters amounts to source finding.
 
-Needs some serious brainstorming...
+
+\subsection{generative model}
+Is our current scheme, in which we search for regions that have high
+Bayes Factor values, equivalent or close to optimizing a parameterised
+generative model of the \emph{image as a whole}? We haven't thought about it
+in this way before, but writing down such a model would help us to
+generalise the scheme to more than two classes.
+
+A procedure for generating an image containing a \emph{single source}
+is as follows, assuming we're binning the pixel intensities into $I$ bins:
+\begin{enumerate}
+\item make up parameters $\btheta$ describing a region of the image.
+\item note that $\btheta$ determines the numbers of pixels inside ($N^1$)  and  outside ($N^0$) the region.
+\item set up $\balpha^1 \in \mathbb{R}^I$, with small numbers,
+  and $\balpha^0 \in \mathbb{R}^I$, with big numbers, especially at the bins corresponding to low amplitudes.
+\item the bin counts are DCM distributed, but subject to constraints on $\sum_i n_i$ determined by the choice of $\btheta$.
+  \begin{itemize}
+    \item    $\vec{n}^1 \sim \DCM(\vec{n} \given \balpha^1)$
+    \item $\vec{n}^0 \sim \DCM(\vec{n} \given \balpha^0)$
+  \end{itemize}
+\end{enumerate}
+
+So this generative model of an image takes parameters $\theta,
+\balpha^0, \balpha^1$, and results in just one ``data point''
+consisting of the two vectors of counts $\vec{n}^0,\vec{n}^1$, which are sampled independently of one another.  The
+likelihood and its logarithm are therefore
+\begin{align*}
+L =& \DCM(\vec{n}^0 \mid \balpha^0) \; \cdot \; \DCM(\vec{n}^1 \mid \balpha^1) 
+\\ \\
+\log L =& \log \DCM(\vec{n}^0 \mid \balpha^0) \;\; + \;\; \log \DCM(\vec{n}^1 \mid \balpha^1) 
+%\\ \\ =& \log \Gamma(A^0) +\log \Gamma(A^1) - \log \Gamma(N^0+A^0)  - \log \Gamma(N^1+A^1) + \\ & \sum_i \log \Gamma(n^0_i + \alpha_i^0) - \log \Gamma(\alpha_i^0) + \sum_i \log \Gamma(n^1_i + \alpha_i^1) - \log \Gamma(\alpha_i^1) 
+\end{align*}
+
+This doesn't seem much like our Bayes factor though, since it
+\emph{adds} instead of subtracts the two $\log \DCM$ terms! The terms
+are slightly different too.  Here they are, for direct comparison:
+
+\begin{tabular}{|l|l|}
+\hline
+log DMR (Bayes Factor): & 
+\parbox{.7\textwidth}{
+\begin{align*}
+&\log \DCM(\vec{n}^1 \given \balpha^1) \;\;-\;\; \log \DCM(\vec{n}^1 \given \balpha^0)
+\end{align*}
+} \\
+\hline
+Log L: & 
+\parbox{.7\textwidth}{
+\begin{align*}
+& \log \DCM(\vec{n}^1 \mid \balpha^1) \;\; + \;\; \log \DCM(\vec{n}^0 \mid \balpha^0)
+\end{align*}
+} \\
+\hline
+\end{tabular}
+
+Note that with $\log L$ it seems that we're modelling the whole image
+in that $\bn^0$ is involved, but with the Bayes factor we are only
+considering the current region. But in fact this is not so, and {\it
+  the two are equivalent} up to an additive constant (so far as
+$\btheta$ is concerned).
+
+Consider the log likelihood of the entire image under just the
+``background'' model (or alternatively, consider the log likelihood in the case that we were to set $\balpha^1$ equal to $\balpha^0$):
+\begin{align*}
+\log \DCM(\bn \mid \balpha^0) 
+&= \log \DCM(\bn^0(\theta) + \bn^1(\theta) \mid \balpha^0)  \\
+&= \log \DCM(\bn^0(\theta) \mid \balpha^0) \; + \; \log \DCM(\bn^1(\theta) \mid \balpha^0) 
+\end{align*}
+This \emph{has to} be unaffected by our choice of region $\btheta$,
+ie. its derivative w.r.t. $\theta$ must be zero everywhere.  Adding
+this constant to the original log likelihood immediately yeilds the
+``Bayes factor'' score we've been using!
+
+Put another way, the gradient w.r.t. any dimension of $\theta$ for the
+log likelihood under the above generative model is the same as the
+gradient of the ratio we used.  For the record, the gradient of our
+Bayes factor (and thus the gradient of the log likelihood too) is...
+\begin{align}
+\frac{\partial}{\partial\theta}\text{DMR}(\theta) 
+&= \sum_i \big[ \psi(n_i + \alpha^S_i) - \psi(n_i + \alpha^B_i) \big] \frac{\partial n^1_i}{\partial\theta} \notag\\
+& - \;\; \big[\psi(N^1+A^1) - \psi(N^1+A^0)]\sum_i \frac{\partial n^1_i}{\partial\theta}
+\end{align}
+
+
+Describing things in terms of (the likelihood of) a generative model
+for the image as a whole is going to be more useful in some contexts,
+and especially for thinking about how to get beyond one source, and
+two classes.
+
+
+Next things:
+\begin{enumerate}
+\item Can we maximize $P(\btheta \mid \bn^0,  \bn^1, \balpha^0, \balpha^1)$ instead of $P(\bn^0,  \bn^1, \balpha^0, \balpha^1 \mid \btheta)$? Seems trivial enough: just need to provide a prior over $\theta$ giving a plausible source size range for example.
+\item Can we do EM? At the moment we hold distribution parameters
+  $(\balpha^0,\balpha^1)$ fixed and optimize region parameters
+  $\btheta$, which is like the ``M'' step in the EM algorithm. What
+  about then holding region $\btheta$ fixed and updating
+  $(\balpha^0,\balpha^1)$, which is like the ``E''
+  step\footnote{Warning / note to self: the ``offset'' term is a
+    constant w.r.t. $\theta$ but not w.r.t. the $\balpha$'s. But I
+    can't see how that's going to be a problem anyway.}  ? Would it
+  work? Would it be good? Would we iterate until... what? Would this
+  work with more than one source? (ie. 10000....).
+\end{enumerate}
+
 
 \end{document}
