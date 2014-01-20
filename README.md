@@ -8,7 +8,7 @@ because *we have reached the limits of what humans can teach us*.
 
 authors
 -------
-- Marcus Frean (Victoria)
+- Marcus Frean (Victoria U of Wellington)
 - David W. Hogg (NYU)
 
 license
