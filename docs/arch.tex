@@ -1,16 +1,9 @@
 % This document is part of the Imaging Archetypes project.
 % Copyright 2013 the Authors.
-
 \documentclass[12pt]{article}
+\input{LocalStyle.sty}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\newcommand{\given}{\,|\,}
-\renewcommand{\vec}[1]{\mathbf{#1}}
-\newcommand{\balpha}{\mbox{\boldmath $\alpha$}}
-\newcommand{\btheta}{\mbox{\boldmath $\theta$}}
-\newcommand{\bphi}{\mbox{\boldmath $\phi$}}
-\newcommand{\bn}{\mbox{\boldmath $n$}}
-\newcommand{\DCM}{\mbox{DCM}}
 
 % paragraphs guff
 \setlength{\parindent}{0in}
@@ -127,7 +120,7 @@ in this way before, but writing down such a model would help us to
 generalise the scheme to more than two classes.
 
 A procedure for generating an image containing a \emph{single source}
-is as follows, assuming we're binning the pixel intensities into $I$ bins:
+`is as follows, assuming we're binning the pixel intensities into $I$ bins:
 \begin{enumerate}
 \item make up parameters $\btheta$ describing a region of the image.
 \item note that $\btheta$ determines the numbers of pixels inside ($N^1$)  and  outside ($N^0$) the region.
@@ -215,8 +208,58 @@ for the image as a whole is going to be more useful in some contexts,
 and especially for thinking about how to get beyond one source, and
 two classes.
 
+\section{But that's actually not correct!!!}
 
-Next things:
+Consider a vector whose elements are categorical variables $x \in \mathcal{X} $ where $\mathcal{X} = \{X_1,\ldots,X_K \}$
+\[
+\bx = (x_1,x_2, \ldots, x_N) \]
+We will use $\mathbb{X}$ to denote the same as a set (ie. without the ordering imposed by the vector). The number of times each category occurs (its "count") forms a vector
+\[
+\bn = n_1,\ldots,n_K  
+\] 
+and we'll denote the {\it total} count $\sum_{k=1}^K n_k$ by $N$.
+
+\subsection{split}
+Now consider splitting the ``image'' $\bx$ into two parts, e.g. are some pixel mid-way along its length:
+\begin{align*}
+\bx =& (\by , \bz)
+\intertext{To connect this to radioblobs, think of $\by$ as the values inside a putative blob region and $\bz$ as the rest (the "background"). 
+At any rate, I initially thought one could just write
+}
+P(\bx) =& P(\by , \bz)\\
+=& P(\by) \; P(\bz)
+\end{align*}
+and I believe I've assumed that in the above argument.
+
+But it seems that can't be right: imagine the ``image'' is binary
+($\mathcal{X}=\{0,1\}$), our split point is just the halfway
+mark. Suppose the left hand ($\by$) has rather more zeros by chance,
+and the right ($\bz$) has more ones.
+
+The worse this skew is, the more $P(\by, \bz)$ goes down since both
+halves are getting less likely, but $P(\bx)$ stays the same, so they
+can't be equal!
+
+This seems to true for any distribution - it's not some kind of
+Dirichlet weirdness.
+
+{\color{red}{\bf This is just {\em stupid}:  what is my idiotic error?!}}
+
+The vector \[\mathtt{000000011111111111111}\] has exactly the same
+probability using a fair coin as \[\mathtt{10110111101111011100}\]
+but what about the probability of 
+tossing \[\mathtt{0000000} \;\textit{ followed by  } \;\mathtt{11111111111111}\]
+
+My gut says $P(\bx) \neq P(\by , \bz)$ because the second is the
+probability not just of the values but the values {\it split into those two
+groups}. But that's just fluffy still.
+
+
+
+
+
+\section{Next things}
+
 \begin{enumerate}
 \item Can we maximize $P(\btheta \mid \bn^0,  \bn^1, \balpha^0, \balpha^1)$ instead of $P(\bn^0,  \bn^1, \balpha^0, \balpha^1 \mid \btheta)$? Seems trivial enough: just need to provide a prior over $\theta$ giving a plausible source size range for example.
 \item Can we do EM? At the moment we hold distribution parameters
