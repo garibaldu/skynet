@@ -1,4 +1,4 @@
-all: arch.pdf
+all: arch.pdf skynet.pdf dictionary.pdf
 
 %.pdf: %.tex
 	pdflatex $<

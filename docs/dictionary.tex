@@ -1,0 +1,67 @@
+% This document is part of the Imaging Archetypes project.
+% Copyright 2014 the Authors.
+
+% ## to-do
+% - write
+
+% ## style guidelines
+% - {eqnarray} for equations!
+
+\documentclass[12pt]{article}
+\newcommand{\given}{\,|\,}
+\begin{document}\sloppy\sloppypar
+
+\noindent
+\begin{tabular}{ll}
+\textsl{title:}   & A translationally invariant dictionary model for imaging  \\
+\textsl{from:}    & Hogg \\
+\textsl{to:}      & Frean \\
+\textsl{date:}    & 2014-05-03
+\end{tabular}
+\bigskip
+
+It is not necessarily correct to think of a CCD (or other digital
+detector) as a photon-collecting ``bucket''.
+However, \emph{if} we do, we can take the telescope optics and
+atmospheric point-spread function and convolve (or correlate) it with
+the pixel to get a pixel-convolved point-spread function.
+It is this object---the pixel-convolved point-spread function---that
+we call the ``PSF'' from here on.
+Because we have pre-convolved with the pixel, this PSF is just
+\emph{sampled} at the pixel centers.
+
+To be exceedingly specific, if the PSF is $\psi(\Delta x)$, where
+$\Delta x$ is a focal-plane (two-dimensional) vector displacement
+between pixel and star, then the expected level $\mu_m$ of pixel $m$
+is
+\begin{eqnarray}
+\mu_m &=& I_0 + \sum_{k=1}^K S_k\,\psi(x_m - x_k)
+\quad ,
+\end{eqnarray}
+where $I_0$ is some background or dc offset, there are $K$ stars $k$
+with fluxes $S_k$ at positions $x_k$, and pixel $m$ is at position
+$x_m$.
+Here we have assumed that there are only stars, and they all have the
+same PSF.
+We have also implicitly assumed that all pixels are identical in their
+size, shape, and mean sensitivity.
+Note that because the imaging is not necessarily well-sampled, the
+function $\psi(\Delta x)$ might need to be known or understood at a
+resolution much finer than pixel-level.
+
+If we have measured pixel values (data values) $d_m$ with inverse
+noise variances $w_m$ and the form given above for the expected level,
+we can write down a likelihood that is something like
+\begin{eqnarray}
+\ln p(d\given\theta) &=& -\frac{1}{2}\,\sum_{m=1}^M w_m\,[d_m - \mu_m(\theta)]^2 + \frac{1}{2}\,\sum_{m=1}^M \ln(\frac{w_m}{2\pi})
+\\
+p &\equiv& \left\{d_m\right\}_{m=1}^M
+\\
+\theta &\equiv& \left\{I_0, \left\{S_k, x_k\right\}_{k=1}^K\right\}
+\\
+\quad,
+\end{eqnarray}
+where the Gaussian assumption has been made, $d$ is a blob of data,
+and $\theta$ is a blob of parameters.
+
+\end{document}
