@@ -35,7 +35,7 @@ To be exceedingly specific, if the PSF is $\psi(\Delta x)$, where
 $\Delta x$ is a focal-plane (two-dimensional) vector displacement
 between pixel and star, then the expected level $\mu_m$ of pixel $m$
 is
-\begin{eqnarray}
+\begin{eqnarray}\label{eq:expect}
 \mu_m &=& I_0 + \sum_{k=1}^K S_k\,\psi(x_m - x_k)
 \quad ,
 \end{eqnarray}
@@ -54,7 +54,7 @@ If we have an image that contains $M$ measured pixel values (data
 values) $d_m$ with inverse noise variances $w_m$ and the form given
 above for the expected level, we can write down a likelihood that is
 something like
-\begin{eqnarray}
+\begin{eqnarray}\label{eq:like}
 \ln p(d\given\theta) &=& -\frac{1}{2}\,\sum_{m=1}^M w_m\,[d_m - \mu_m(\theta)]^2 + \frac{1}{2}\,\sum_{m=1}^M \ln(\frac{w_m}{2\pi})
 \\
 p &\equiv& \left\{d_m\right\}_{m=1}^M
@@ -66,14 +66,25 @@ p &\equiv& \left\{d_m\right\}_{m=1}^M
 where the Gaussian assumption has been made, $d$ is a blob of data,
 and $\theta$ is a blob of parameters.
 
-If you want to be all cool about it, you can call this a ``dictionary
-model'' for the $M$-pixel image.
+If you want to be all cool about it, you can call the description in
+equation~(\ref{eq:expect}) a ``dictionary model'' for the $M$-pixel
+image.
 This dictionary contains two ``words''.
 The first word is the dc (uniform-illumination or sky) word, with
 trivial ``shape''.
 It appears only once in the image, with amplitude $I_0$.
-The second word is the star word, with shape $\psi(\Delta x)$.
-It appears $K$ times in the image, with amplitudes $S_k$ and
-(continuous, real-valued, non-integer) offsets $x_k$.
+The second word is the star word, with shape $\psi(\Delta x)$.  It
+appears $K$ times in the image, with amplitudes $S_k$ and (continuous,
+real-valued, non-integer) two-dimensional positional offsets $x_k$.
+
+Of course there are a million problems with the dictionary model
+presented in equation~(\ref{eq:expect}).
+The first is that it imagines that there are \emph{only} stars.
+No galaxies or nebulae or cosmic rays!
+The second is that it imagines that the PSF is both known and constant
+over the image.
+That is, the PSF model is rigid; it has neither parameters nor spatial
+dependence.
+Is it still a ``dictionary method'' if we soften these assumptions?
 
 \end{document}
