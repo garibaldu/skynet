@@ -8,15 +8,17 @@
 % - {eqnarray} for equations!
 
 \documentclass[12pt]{article}
+\input{vc}
 \newcommand{\given}{\,|\,}
 \begin{document}\sloppy\sloppypar
 
 \noindent
 \begin{tabular}{ll}
-\textsl{title:}   & A translationally invariant dictionary model for imaging  \\
-\textsl{from:}    & Hogg \\
-\textsl{to:}      & Frean \\
-\textsl{date:}    & 2014-05-03
+\textsl{title:}    & A translationally invariant dictionary model for imaging \\
+\textsl{from:}     & Hogg \\
+\textsl{to:}       & Frean \\
+\textsl{git hash:} & \texttt{\githash~(\gitdate)}
+
 \end{tabular}
 \bigskip
 
@@ -52,12 +54,12 @@ resolution much finer than pixel-level.
 
 If we have an image that contains $M$ measured pixel values (data
 values) $d_m$ with inverse noise variances $w_m$ and the form given
-above for the expected level, we can write down a likelihood that is
-something like
+above in equation~(\ref{eq:expect}) for the expected level, we can
+write down a likelihood that is something like
 \begin{eqnarray}\label{eq:like}
 \ln p(d\given\theta) &=& -\frac{1}{2}\,\sum_{m=1}^M w_m\,[d_m - \mu_m(\theta)]^2 + \frac{1}{2}\,\sum_{m=1}^M \ln(\frac{w_m}{2\pi})
 \\
-p &\equiv& \left\{d_m\right\}_{m=1}^M
+d &\equiv& \left\{d_m\right\}_{m=1}^M
 \\
 \theta &\equiv& \left\{I_0, \left\{S_k, x_k\right\}_{k=1}^K\right\}
 \\
