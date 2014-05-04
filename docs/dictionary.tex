@@ -17,7 +17,7 @@
 \textsl{title:}    & A translationally invariant dictionary model for imaging \\
 \textsl{from:}     & Hogg \\
 \textsl{to:}       & Frean \\
-\textsl{git hash:} & \texttt{\githash~(\gitdate)}
+\textsl{git hash:} & \texttt{\githash\,(\gitdate)}
 
 \end{tabular}
 \bigskip
@@ -37,12 +37,12 @@ To be exceedingly specific, if the PSF is $\psi(\Delta x)$, where
 $\Delta x$ is a focal-plane (two-dimensional) vector displacement
 between pixel and star, then the expected level $\mu_m$ of pixel $m$
 is
-\begin{eqnarray}\label{eq:expect}
-\mu_m &=& I_0 + \sum_{k=1}^K S_k\,\psi(x_m - x_k)
+\begin{eqnarray}
+\mu_m &=& I_0 + \sum_{k=1}^K s_k\,\psi(x_m - x_k) \label{eq:expect}
 \quad ,
 \end{eqnarray}
 where $I_0$ is some background or dc offset, there are $K$ stars $k$
-with fluxes $S_k$ at two-dimensional vector positions $x_k$, and pixel
+with fluxes $s_k$ at two-dimensional vector positions $x_k$, and pixel
 $m$ is at two-dimensional vector position $x_m$.
 Here we have assumed that there are only stars, and they all have the
 same PSF.
@@ -56,13 +56,12 @@ If we have an image that contains $M$ measured pixel values (data
 values) $d_m$ with inverse noise variances $w_m$ and the form given
 above in equation~(\ref{eq:expect}) for the expected level, we can
 write down a likelihood that is something like
-\begin{eqnarray}\label{eq:like}
-\ln p(d\given\theta) &=& -\frac{1}{2}\,\sum_{m=1}^M w_m\,[d_m - \mu_m(\theta)]^2 + \frac{1}{2}\,\sum_{m=1}^M \ln(\frac{w_m}{2\pi})
+\begin{eqnarray}
+\ln p(d\given\theta) &=& -\frac{1}{2}\,\sum_{m=1}^M w_m\,[d_m - \mu_m(\theta)]^2 + \frac{1}{2}\,\sum_{m=1}^M \ln(\frac{w_m}{2\pi}) \label{eq:like}
 \\
 d &\equiv& \left\{d_m\right\}_{m=1}^M
 \\
-\theta &\equiv& \left\{I_0, \left\{S_k, x_k\right\}_{k=1}^K\right\}
-\\
+\theta &\equiv& \left\{I_0, \left\{s_k, x_k\right\}_{k=1}^K\right\}
 \quad,
 \end{eqnarray}
 where the Gaussian assumption has been made, $d$ is a blob of data,
@@ -76,7 +75,7 @@ The first word is the dc (uniform-illumination or sky) word, with
 trivial ``shape''.
 It appears only once in the image, with amplitude $I_0$.
 The second word is the star word, with shape $\psi(\Delta x)$.  It
-appears $K$ times in the image, with amplitudes $S_k$ and (continuous,
+appears $K$ times in the image, with amplitudes $s_k$ and (continuous,
 real-valued, non-integer) two-dimensional positional offsets $x_k$.
 
 Of course there are a million problems with the dictionary model
@@ -88,5 +87,68 @@ over the image.
 That is, the PSF model is rigid; it has neither parameters nor spatial
 dependence.
 Is it still a ``dictionary method'' if we soften these assumptions?
+One softening would involve adding parameters $\theta_k$ to each
+instance $k$ of the word.
+Another softening would be to keep the words rigid (except for
+amplitude $s_k$ and location $x_k$) but increase substantially the
+\emph{number} of words in the vocabulary.
+
+In the other direction, for computational simplicity, we can make the
+model more rigid.
+The first move in that direction would be to integerize or pixelize
+the location space, so the word locations $x_k$ are also on an integer
+grid like the pixel locations $x_m$.
+Then instead of having $K$ words in the image, there would be $K$
+pixels in the word-location space, with a prior that encourages most
+of the $s_k$ to go to zero.
+The transformation from the image of amplitudes $s_k$ to the image of
+expectations (predictions) $\mu_m$ is in this case exactly a discrete
+convolution.
+There is fast shit for that.
+Although I deliberately don't know much about fastness, I think that
+it might even be fast if the image of amplitudes $s_k$ is far finer
+(larger in dimension) than the image of data values $d_m$.
+If I am right, we might be able to get the fastness of convolution and
+\emph{also} the scientific value of super-resolution modeling.
+
+When both the data space and the amplitude space are pixelized, the
+expectation value becomes a finite linear algebra operation, which can
+be written in two different ways.
+\begin{eqnarray}
+\mu &=& \Psi\,s \label{eq:linalg1}
+\\
+\mu &=& S\,\psi \label{eq:linalg2}
+\quad ,
+\end{eqnarray}
+where $\mu$ is the $M$-vector of expectation values $\mu_m$ (unwrapped
+from an image into a big vector), $\Psi$ is a $M\times K$ sparse
+convolution matrix encoding the PSF $\psi(x_m - x_k)$, $s$ is the
+$K$-vector of amplitudes $s_k$ (also unwrapped into a big vector), $S$
+is a $M\times L$ sparse convolution matrix encoding the locations and
+values of the non-zero amplitudes $s_k$, $\psi$ is an $L$-vector image
+of the PSF at the fine resolution (again with the unwrapping), and I
+have ignored the dc (sky) word.
+These two expressions~(\ref{eq:linalg1}) and (\ref{eq:linalg2}) are
+identical; they are just different ways of thinking about what's the
+matrix and what's the vector.
+I am being deliberately vague about the contents of the sparse
+rectangular $\Psi$ and $S$ matrices, because the details depend a lot
+on implementation (grids, unwrappings, and so on).
+I have an intuition that there is an infinite-resolution
+generalization of this way of writing it such that it would be
+possible to work at infinite resolution without ever having to
+represent in the computer any infinite dimensional objects, but I have
+been drinking.
+
+The objective function would be something like
+\begin{eqnarray}
+-\frac{1}{2}\,||d - \mu||_2^2 - \frac{\epsilon}{2}\,||s||_1
+\quad ,
+\end{eqnarray}
+where $\epsilon$ controls the strength of the regularization and maybe
+we need to do some pixelwise multiplication of inverse-variance
+weights in the real problem.
+Better might be to write not an objective function but a likelihood
+times a prior, and then do proper inference.
 
 \end{document}
